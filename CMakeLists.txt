@@ -4,6 +4,7 @@ project(pong VERSION 0.1)
 
 set(SOURCE_FILES
     src/main.cpp
+    src/Shader.cpp
 )
 
 add_executable(pong ${SOURCE_FILES})
