@@ -5,33 +5,10 @@
 
 #include <GLFW/glfw3.h>
 
+#include "IndexBuffer.h"
+#include "Renderer.h"
 #include "Shader.h"
-
-#define WIDTH  800
-#define HEIGHT 600
-
-#ifndef OPENGL_VERSION_MAJOR
-#define OPENGL_VERSION_MAJOR 4
-#endif
-#ifndef OPENGL_VERSION_MINOR
-#define OPENGL_VERSION_MINOR 6
-#endif
-#ifndef OPENGL_VERSION_PROFILE
-#define OPENGL_VERSION_PROFILE "core"
-#endif
-
-// GL Error Callback
-void GLAPIENTRY OpenGlMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-									  const GLchar* message, const void* userParam)
-{
-	fprintf(stdout, "[!] GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
-}
-
-void GLFWMessageCallback(int code, const char* message)
-{
-	std::cout << "[!] GLFW CALLBACK (Error Code " << code << "): " << message << std::endl;
-}
+#include "VertexBuffer.h"
 
 int main()
 {
@@ -82,70 +59,66 @@ int main()
 	std::cout << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
 #pragma endregion
+	{
+		// The rectangle
+		// 3	2
+		//
+		// 0	1
 
-	// The rectangle
-	// 3	2
-	//
-	// 0	1
+		float vertices[] = {
+			-0.5f, -0.5f, //
+			0.5f,  -0.5f, //
+			0.5f,  0.5f,  //
+			-0.5f, 0.5f,  //
+		};
 
-	float vertices[] = {
-		-0.5f, -0.5f, //
-		0.5f,  -0.5f, //
-		0.5f,  0.5f,  //
-		-0.5f, 0.5f,  //
-	};
+		unsigned int indices[] = {
+			0, 1, 2, //
+			2, 3, 0	 //
+		};
 
-	unsigned int indices[] = {
-		0, 1, 2, //
-		2, 3, 0	 //
-	};
+		// Set the viewport size (equal to the window)
+		glViewport(0, 0, WIDTH, HEIGHT);
 
-	// Set the viewport size (equal to the window)
-	glViewport(0, 0, WIDTH, HEIGHT);
+		// Vertex Array
+		unsigned int vao;
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
 
-	unsigned int vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+		// Vertex buffer
+		VertexBuffer vb(vertices, sizeof(float) * 2 * 4);
 
-	// Vertex buffer and array
-	unsigned int vbo;
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * 4, vertices, GL_STATIC_DRAW);
+		// Vertex attributes
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0); // TODO: Try to use 0 in stride
 
-	// Vertex attributes
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0); // TODO: Try to use 0 in stride
+		// Index Buffer
+		IndexBuffer ib(indices, 3 * 2);
 
-	// Index Buffer
-	unsigned int ibo;
-	glGenBuffers(1, &ibo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 3 * 2, indices, GL_STATIC_DRAW);
+		// Shader
+		ShaderSources src	= ParseShader("res/Basic.shader");
+		unsigned int shader = CreateShader(src.VertexSource, src.FragmentSource);
+		glUseProgram(shader);
 
-	// Shader
-	ShaderSources src	= ParseShader("res/Basic.shader");
-	unsigned int shader = CreateShader(src.VertexSource, src.FragmentSource);
-	glUseProgram(shader);
+		// Set Uniform
+		int location = glGetUniformLocation(shader, "u_Color");
+		assert(location != -1);
+		glUniform4f(location, 1.0f, 1.0f, 1.0f, 1.0f);
 
-	// Set Uniform
-	int location = glGetUniformLocation(shader, "u_Color");
-	assert(location != -1);
-	glUniform4f(location, 1.0f, 1.0f, 1.0f, 1.0f);
+		// Game Loop
+		while (!glfwWindowShouldClose(window)) {
+			// Clear the screen
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Game Loop
-	while (!glfwWindowShouldClose(window)) {
-		// Clear the screen
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			// Render to the screen
+			glfwSwapBuffers(window);
 
-		// Render to the screen
-		glfwSwapBuffers(window);
-
-		// Get Input And Events
-		glfwPollEvents();
+			// Get Input And Events
+			glfwPollEvents();
+		}
 	}
 
 	// Clean up

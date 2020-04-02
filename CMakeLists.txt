@@ -5,6 +5,9 @@ project(pong VERSION 0.1)
 set(SOURCE_FILES
     src/main.cpp
     src/Shader.cpp
+    src/Renderer.cpp
+    src/VertexBuffer.cpp
+    src/IndexBuffer.cpp
 )
 
 add_executable(pong ${SOURCE_FILES})
@@ -12,7 +15,7 @@ add_executable(pong ${SOURCE_FILES})
 # Sets the opengl version to use.
 set(OPENGL_VERSION_MAJOR 4)
 set(OPENGL_VERSION_MINOR 6)
-set(OPENGL_VERSION_PROFILE "core")
+set(OPENGL_VERSION_PROFILE "core") #"core" or "compatibility"
 
 target_compile_definitions(pong
     PUBLIC OPENGL_VERSION_MAJOR=${OPENGL_VERSION_MAJOR}
