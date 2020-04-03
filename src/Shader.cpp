@@ -6,12 +6,41 @@
 
 #include <glad/glad.h>
 
-unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
+Shader::Shader(const std::string& filepath): m_FilePath(filepath)
 {
+	m_RendererID = CreateShader(filepath);
+	glUseProgram(m_RendererID);
+}
+
+Shader::~Shader()
+{
+	glDeleteProgram(m_RendererID);
+}
+
+void Shader::Bind() const
+{
+	glUseProgram(m_RendererID);
+}
+
+void Shader::Unbind() const
+{
+	glUseProgram(0);
+}
+
+void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3)
+{
+	glUniform4f(GetUniformLocation(name), v0, v1, v2, v3);
+}
+
+// Gets a filepath to a shader. and return the ID for the shader program.
+unsigned int Shader::CreateShader(const std::string& filepath)
+{
+	ShaderSources src = ParseShader(filepath);
+
 	unsigned int program = glCreateProgram();
 
-	unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
-	unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+	unsigned int vs = CompileSubShader(GL_VERTEX_SHADER, src.VertexSource);
+	unsigned int fs = CompileSubShader(GL_FRAGMENT_SHADER, src.FragmentSource);
 
 	glAttachShader(program, vs);
 	glAttachShader(program, fs);
@@ -41,7 +70,7 @@ unsigned int CreateShader(const std::string& vertexShader, const std::string& fr
 	return program;
 }
 
-unsigned int CompileShader(unsigned int type, const std::string& shaderSource)
+unsigned int Shader::CompileSubShader(unsigned int type, const std::string& shaderSource)
 {
 	unsigned int id = glCreateShader(type);
 	const char* src = shaderSource.c_str();
@@ -68,7 +97,7 @@ unsigned int CompileShader(unsigned int type, const std::string& shaderSource)
 	return id;
 }
 
-ShaderSources ParseShader(const std::string& filepath)
+ShaderSources Shader::ParseShader(const std::string& filepath)
 {
 	enum class ShaderType
 	{
@@ -103,4 +132,19 @@ ShaderSources ParseShader(const std::string& filepath)
 		}
 	}
 	return {ss[0].str(), ss[1].str()};
+}
+
+int Shader::GetUniformLocation(const std::string& name)
+{
+	if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end()) {
+		return m_UniformLocationCache[name];
+	}
+
+	int location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (location == -1) {
+		std::cout << "[!] Couldn't Find uniform " << name << std::endl;
+	}
+	m_UniformLocationCache[name] = location;
+
+	return location;
 }

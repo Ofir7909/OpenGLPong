@@ -8,6 +8,7 @@ set(SOURCE_FILES
     src/Renderer.cpp
     src/VertexBuffer.cpp
     src/IndexBuffer.cpp
+    src/VertexArray.cpp
 )
 
 add_executable(pong ${SOURCE_FILES})
