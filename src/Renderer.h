@@ -3,11 +3,15 @@
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
+#include "Color.h"
 #include "IndexBuffer.h"
 #include "Shader.h"
 #include "VertexArray.h"
 #include "VertexBuffer.h"
+
+#include "Math.h"
 
 #define WIDTH  800
 #define HEIGHT 600
@@ -30,18 +34,32 @@ void GLFWMessageCallback(int code, const char* message);
 class Renderer
 {
   public:
-	Renderer();
 	~Renderer();
+
+	static Renderer& Get();
 
 	void init();
 	void Clear() const;
 	void Draw(const VertexArray& va, const IndexBuffer& ib) const;
 	void Render() const;
+	void Update();
+
+	inline void SetDrawingColor(const Color& color) { m_DrawingColor = color; }
+
+	// Primitive shapes
+	void DrawRect(const glm::vec2& position, const glm::vec2& scale);
+	void DrawCircle(const glm::vec2& position, const glm::vec2& scale);
 
 	inline GLFWwindow* GetWindow() const { return m_Window; }
 
 	inline bool IsRunning() const { return !glfwWindowShouldClose(m_Window); }
 
   private:
+	Renderer();
+
+  private:
+	static Renderer* s_Instance;
 	GLFWwindow* m_Window;
+
+	Color m_DrawingColor;
 };

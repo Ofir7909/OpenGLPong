@@ -32,6 +32,11 @@ void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2,
 	glUniform4f(GetUniformLocation(name), v0, v1, v2, v3);
 }
 
+void Shader::SetUniformMat4f(const std::string& name, const glm::mat4& matrix)
+{
+	glUniformMatrix4fv(GetUniformLocation(name), 1, false, &matrix[0][0]);
+}
+
 // Gets a filepath to a shader. and return the ID for the shader program.
 unsigned int Shader::CreateShader(const std::string& filepath)
 {

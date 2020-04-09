@@ -9,9 +9,16 @@ set(SOURCE_FILES
     src/VertexBuffer.cpp
     src/IndexBuffer.cpp
     src/VertexArray.cpp
+    src/GameObject.cpp
+    src/Paddle.cpp
+    src/Ball.cpp
+    src/Random.cpp
+    src/Game.cpp
+    src/Time.cpp
 )
 
 add_executable(pong ${SOURCE_FILES})
+target_compile_features(pong PUBLIC cxx_std_17)
 
 # Sets the opengl version to use.
 set(OPENGL_VERSION_MAJOR 4)
@@ -41,12 +48,16 @@ add_custom_target(
 
 add_dependencies( pong copy_res_dir )
 
+#glm
+add_subdirectory(lib/glm)
+target_link_libraries(pong PUBLIC glm)
+
 # glfw
 set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
 set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
 set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
-add_subdirectory(lib/glfw EXCLUDE_FROM_ALL)
+add_subdirectory(lib/glfw)
 target_link_libraries(pong PUBLIC glfw)
 
 

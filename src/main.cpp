@@ -5,67 +5,56 @@
 
 #include <GLFW/glfw3.h>
 
+#include "Game.h"
 #include "Renderer.h"
+#include "Time.h"
+
+// GameObjects
+#include "Ball.h"
+#include "Paddle.h"
+
+Paddle* playerPaddle;
+
+// The Play area is	40x30 with 0,0 being the center.
+
+// (-20,15)								(20,15)
+//
+//
+//
+//
+//
+// (-20,-15)							(20,-15)
 
 int main()
 {
 	{
-		Renderer renderer;
-		renderer.init();
+		Renderer renderer = Renderer::Get();
 
-		// The rectangle
-		// 3	2
-		//
-		// 0	1
-
-		float vertices[] = {
-			-0.5f, -0.5f, //
-			0.5f,  -0.5f, //
-			0.5f,  0.5f,  //
-			-0.5f, 0.5f,  //
-		};
-
-		unsigned int indices[] = {
-			0, 1, 2, //
-			2, 3, 0	 //
-		};
-
-		// Vertex Array and buffer
-		VertexArray va;
-		VertexBuffer vb(vertices, sizeof(float) * 2 * 4);
-
-		VertexBufferLayout layout;
-		layout.Push<float>(2);
-
-		va.AddBuffer(vb, layout);
-
-		// Index Buffer
-		IndexBuffer ib(indices, 3 * 2);
-
-		// Shader
-		Shader shader("res/Basic.shader");
-
-		va.Unbind();
-		vb.Unbind();
-		ib.Unbind();
-		shader.Unbind();
+		Game game;
+		game.ResetGame();
 
 		// Game Loop
 		while (renderer.IsRunning()) {
+			Time::UpdateTime();
+			Time::PrintTime();
 			// Clear the screen
 			renderer.Clear();
 
-			shader.Bind();
-			shader.SetUniform4f("u_Color", 1.f, 0.f, 0.f, 1.f);
+			// Call the update and draw functions of all the game objects.
+			GameObject::UpdateAll();
+			GameObject::DrawAll();
 
-			renderer.Draw(va, ib);
-
+			// Get input and render to the screen.
+			renderer.Update();
 			renderer.Render();
+
+			if (glfwGetKey(Renderer::Get().GetWindow(), GLFW_KEY_R))
+				game.ResetGame();
 		}
 	}
 
 	// End of program
 	std::cout << "Press Any Key To Continue: " << std::endl;
-	getchar();
+	std::cin.get();
 	return 0;
 }

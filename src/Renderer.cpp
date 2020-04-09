@@ -1,8 +1,21 @@
 #include "Renderer.h"
 
 #include <iostream>
+#include <memory>
 
 #include <glad/glad.h>
+
+#include "GameObject.h"
+
+#include <glm/gtc/matrix_transform.hpp>
+
+Renderer* Renderer::s_Instance = nullptr;
+
+static std::unique_ptr<VertexArray> SquareVA  = nullptr;
+static std::unique_ptr<VertexBuffer> SquareVB = nullptr;
+static std::unique_ptr<IndexBuffer> SquareIB  = nullptr;
+static std::unique_ptr<Shader> BasicShader	  = nullptr;
+static std::unique_ptr<Shader> CircleShader	  = nullptr;
 
 // GL Error Callback
 void GLAPIENTRY OpenGlMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
@@ -18,7 +31,7 @@ void GLFWMessageCallback(int code, const char* message)
 	std::cout << "[!] GLFW CALLBACK (Error Code " << code << "): " << message << std::endl;
 }
 
-Renderer::Renderer()
+Renderer::Renderer(): m_DrawingColor(1.0f, 1.0f, 1.0f, 1.0f)
 {
 }
 
@@ -26,6 +39,16 @@ Renderer::~Renderer()
 {
 	glfwDestroyWindow(m_Window);
 	glfwTerminate();
+}
+
+Renderer& Renderer::Get()
+{
+	if (!s_Instance) {
+		s_Instance = new Renderer();
+		s_Instance->init();
+	}
+
+	return *s_Instance;
 }
 
 void Renderer::init()
@@ -57,7 +80,7 @@ void Renderer::init()
 	glfwMakeContextCurrent(m_Window);
 
 	// Set Vsync.
-	glfwSwapInterval(1);
+	glfwSwapInterval(0);
 
 	// Init Glad.
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -78,6 +101,39 @@ void Renderer::init()
 
 	// Set the viewport size (equal to the window)
 	glViewport(0, 0, WIDTH, HEIGHT);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Init Primitive shapes
+
+	// The rectangle
+	// 3	2
+	//
+	// 0	1
+
+	float SquareVertices[] = {
+		-0.5f, -0.5f, //
+		0.5f,  -0.5f, //
+		0.5f,  0.5f,  //
+		-0.5f, 0.5f,  //
+	};
+
+	unsigned int SquareIndices[] = {
+		0, 1, 2, //
+		2, 3, 0	 //
+	};
+
+	SquareVA	 = std::make_unique<VertexArray>();
+	SquareVB	 = std::make_unique<VertexBuffer>(SquareVertices, sizeof(float) * 2 * 4);
+	SquareIB	 = std::make_unique<IndexBuffer>(SquareIndices, 3 * 2);
+	BasicShader	 = std::make_unique<Shader>("res/Basic.shader");
+	CircleShader = std::make_unique<Shader>("res/Circle.shader");
+
+	VertexBufferLayout SquareLayout;
+	SquareLayout.Push<float>(2);
+
+	SquareVA->AddBuffer(*SquareVB, SquareLayout);
 }
 
 void Renderer::Clear() const
@@ -99,7 +155,48 @@ void Renderer::Render() const
 {
 	// Render to the screen
 	glfwSwapBuffers(m_Window);
+}
 
+void Renderer::Update()
+{
 	// Get Input And Events
 	glfwPollEvents();
+}
+
+void Renderer::DrawRect(const glm::vec2& position, const glm::vec2& scale)
+{
+	// MVP Matrix
+	glm::mat4 projection = glm::ortho(-20.0f, 20.0f, -15.0f, 15.0f, -1.0f, 1.0f);
+
+	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(position, 0.0f));
+	model			= glm::scale(model, glm::vec3(scale, 0.0f));
+
+	glm::mat4 mvpMat = projection * view * model;
+
+	BasicShader->Bind();
+	BasicShader->SetUniform4f("u_Color", m_DrawingColor.r, m_DrawingColor.g, m_DrawingColor.b, m_DrawingColor.a);
+	BasicShader->SetUniformMat4f("u_MVP", mvpMat);
+
+	this->Draw(*SquareVA, *SquareIB);
+}
+
+void Renderer::DrawCircle(const glm::vec2& position, const glm::vec2& scale)
+{
+	// MVP Matrix
+	glm::mat4 projection = glm::ortho(-20.0f, 20.0f, -15.0f, 15.0f, -1.0f, 1.0f);
+
+	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(position, 0.0f));
+	model			= glm::scale(model, glm::vec3(scale, 0.0f));
+
+	glm::mat4 mvpMat = projection * view * model;
+
+	CircleShader->Bind();
+	CircleShader->SetUniform4f("u_Color", m_DrawingColor.r, m_DrawingColor.g, m_DrawingColor.b, m_DrawingColor.a);
+	CircleShader->SetUniformMat4f("u_MVP", mvpMat);
+
+	this->Draw(*SquareVA, *SquareIB);
 }
